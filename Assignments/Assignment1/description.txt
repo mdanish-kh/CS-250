@@ -1,0 +1,14 @@
+Assignment-1: In this assignment, design your data structure that copies the vector class behavior as discussed in the class. 
+The structure stores the student records with the features to dynamically grow and shrink. 
+The decision to grow and shrink should be your own. Your class exposes the following functions to the end-user.
+
+    Insert(........)
+    Delete(.....)
+    Search(....)
+    Replace(...) : It replaces the existing content with the provided
+    ReplaceAtIndex(...); Replace at index location
+
+Define the return type and arguments, as per your understanding. 
+Store the following features for the student, ID, Name, CGPA, and Address.
+
+Apart from that define your utility functions to support your work. Also include the validation check where required.

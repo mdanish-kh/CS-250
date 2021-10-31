@@ -1,0 +1,14 @@
+Assignment-2
+
+Title: Infix to Postfix Expression conversion and its evaluation using stack.
+
+Design and implement ADT for expression conversion from infix to postfix and its evaluation using stack. 
+Please note, operands can be a two-digit number, whereas the operators hold a single character space.
+
+This assignment has two phases as listed below.
+
+    Write a complete stack class using arrays and upload it to a public repo on GitHub. 
+    Later pull that work to include the infix to postfix conversion and evaluation and push back
+
+You should keep the Github repository public and share the link with the assignment submission.
+Deadline: Nov 10, 2021.
