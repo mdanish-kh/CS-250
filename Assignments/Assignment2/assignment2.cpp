@@ -341,7 +341,7 @@ class InfixEvaluation
             // If an unknown character is encountered.
             if (!allowedChar(expression[0][i]))
             {
-                cout << "Syntax Error. Unrecognized character '" << expression[i] 
+                cout << "Syntax Error. Unrecognized character '" << expression[0][i] 
                 << "' at character # " << location << endl;
                 return false;
             }
