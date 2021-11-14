@@ -1,14 +1,13 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <exception>
-
+#include <cmath>
 
 using std::cin;
 using std::cout;
 using std::endl;
 using std::string;
-using std::exception;
+
 
 #define SIZE 100
 #define EMPTY -1
@@ -18,9 +17,8 @@ template <class type>
 class Stack
 {
     private:
-    int top = EMPTY;
 
-    // Character stack
+    int top = EMPTY;
     type array[SIZE];
 
     public:
@@ -35,11 +33,11 @@ class Stack
     }
 
     // Insert a new element at the top of the stack.
-    bool push(type ch)
+    bool push(type item)
     {
         if (isFull()) return false;
 
-        array[++top] = ch; 
+        array[++top] = item;
         return true; 
     }
 
@@ -79,31 +77,23 @@ class Stack
     
 };
 
-class Overflow : public exception
-{  
-    public:  
-        const char * what() const throw()  
-        {  
-            string temp = "Stack overflow. String length is greater than " + std::to_string(SIZE) + "\n";
-            char const *num_char = temp.c_str();
-            return num_char;  
-        }  
-};  
-
 
 // Function prototypes
 string convertToPostfix(string infix);
-
+double evaluatePostfix(string postfix);
+string get_string(string prompt);
 
 int main(void)
 {
     
-    string expression = "(23 + 3) * (5 + 7) * 2 ^ 3";
-    cout << "Expression: " << expression << "\n\n";
+    string expression = get_string("Enter Infix expression: ");
+    cout << "\n\n";
 
     string postfix = convertToPostfix(expression);
     cout << "Postfix form: " << postfix << endl;
 
+    if (postfix != "")
+        cout << "Result: " << evaluatePostfix(postfix);
        
 }
 
@@ -120,8 +110,72 @@ bool isCloseBracket(char ch);
 bool isOpenBracket(char ch);
 int precedence(char _operator);
 void popUntilOpenBracket(string* str, char bracket, Stack<char>* stk, char sep);
+double Compute(double left, char op, double right);
 char separator = ' ';
 
+// Evaluate a postfix expression.
+double evaluatePostfix(string postfix)
+{
+    Stack <double> stack;
+    
+    char _operator;
+    string left;
+    string right;
+    double left_operand;
+    double right_operand;
+    double result;
+
+
+    for (int i = 0; i < postfix.length(); i++)
+    {
+        left = "", right = "";
+
+
+        if (isNum(postfix[i]))
+        {
+            // Right operand begins after a separator.
+            if (postfix[i - 1] == separator)
+            {
+                // Right operator precedes an operator. Scan until an operator is found.
+                while (!isOperator(postfix[i]))
+                {
+                    right += postfix[i++];
+        
+                    if (postfix[i] == separator)
+                        break;
+                }
+                // Convert string to double and push into the stack.
+                stack.push(std::stod(right));
+            }
+            
+            else
+            {
+                // Left operator precedes a separator. Scan until separator is found.
+                while (postfix[i] != separator && !isOperator(postfix[i]))    
+                    left += postfix[i++];
+                stack.push(std::stod(left));
+            }
+        }
+
+        if (isOperator(postfix[i]))
+        {
+            _operator = postfix[i];
+            
+            // Pop two times for left and right operands and compute the result.
+            right_operand = *stack.peak();
+            stack.pop();
+            
+            left_operand = *stack.peak();
+            stack.pop();
+
+            result = Compute(left_operand, _operator, right_operand);
+            
+            // Push the result back into the stack.
+            stack.push(result);
+        }
+    }
+    return result;
+}
 
 
 string convertToPostfix(string infix)
@@ -129,9 +183,6 @@ string convertToPostfix(string infix)
     // Removing whitespaces from the infix expression.
     infix = trim(infix);
     
-    // Check stack overflow
-    if (infix.length() > 2 * SIZE) throw Overflow();
-
     // Check syntax of infix.
     if (!isInfix(infix)) return "";
 
@@ -142,7 +193,6 @@ string convertToPostfix(string infix)
     int j = 0;
     for (int i = 0; i < infix.length() + 1; i++)
     {
-        if (stack.isFull()) throw Overflow;
         
         if (isNum(infix[i]))
             // Print number directly to output.
@@ -150,8 +200,11 @@ string convertToPostfix(string infix)
         
         else if (isBracket(infix[i]))
         {
+
             if (infix[i] == '(' || infix[i] == '{' || infix[i] == '[')
                 stack.push(infix[i]);
+
+            // Closing bracket is found
             else
             {
                 char bracket = infix[i];
@@ -160,6 +213,7 @@ string convertToPostfix(string infix)
         }
         else if (isOperator(infix[i]))
         {
+            // In infix notation, two numbers are separated by an operator.
             if (isNum(infix[i - 1]))
                 postfix += separator;
             
@@ -211,13 +265,13 @@ void popUntilOpenBracket(string* str, char bracket, Stack <char>* stk, char sep)
 
     if (stk -> peak() != NULL)
     {
-
+        // Pop until we find a matching opening bracket.
         while (*stk -> peak() != open_bracket)
         {
             *str += *stk -> peak();
             stk -> pop();
         }
-        // Pop the bracket from stack as well.
+        // Pop the final bracket from stack as well.
         stk -> pop();
 
     }
@@ -250,11 +304,24 @@ bool isBracket(char ch)
     return (isCloseBracket(ch) || isOpenBracket(ch));
 }
 
+// Only numbers, brackets and operators are allowed in an algebraic expression.
 bool allowedChar(char ch)
 {
     return (isNum(ch) || isOperator(ch) || isBracket(ch));
 }
 
+// Calculates and returns the result depending upon the required operation.
+double Compute(double left, char op, double right)
+{
+    double result;
+
+    result = ((op == '+') ? (left + right) : (op == '-') ? (left - right) : (op == '*') ? (left * right) :
+    (op == '/') ? (left / right) : (op == '^') ? (pow(left, right)) : 0);
+
+    return result;
+}
+
+// Returns precedence/priority of operators.
 int precedence(char _operator)
 {
     if (_operator == '+' || _operator == '-') return 1;
@@ -267,10 +334,12 @@ int precedence(char _operator)
 // Checks whether the given expression is correct infix or not.
 bool isInfix(string expression)
 {
+    // Firstly checks whether the brackets used are balanced.
     if (!isBracketCorrect(expression)) return false;
 
     for (int i = 0; i < expression.length(); i++)
     {
+        // If an unknown character is encountered.
         if (!allowedChar(expression[i]))
         {
             cout << "Syntax Error. Unrecognized character '" << expression[i] 
@@ -278,6 +347,7 @@ bool isInfix(string expression)
             return false;
         }
 
+        // Checks whether an operator conforms with infix notation (i.e. Left Root Right)
         if (isOperator(expression[i]))
         {
             char left = expression[i - 1];
@@ -368,8 +438,16 @@ bool isBracketCorrect(string expression)
 }
 
 
+string get_string(string prompt)
+{
+    string str;
+    cout << prompt;
+    getline(cin , str);
+    return str;
+}
+
 // Check for correct brackets  --- DONE
 // Check whether correct infix expression --- DONE
 // Convert to postfix --- DONE
-// Check for stack overflow
-// Evaluate expression.
+// Evaluate expression. --- DONE
+// Use Dynamic Arrays.
