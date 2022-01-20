@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <cmath>
 #include <exception>
 #include <bits/stdc++.h>
 
@@ -199,10 +198,12 @@ class InfixEvaluation
         for (int i = 0; i < infix.length() + 1; i++)
         {
             
-            if (isNum(infix[i]))
+            if (isNum(infix[i]) || infix[i] == '.')
+
                 // Print number directly to output.
                 postfix += infix[i];
             
+
             else if (isBracket(infix[i]))
             {
 
@@ -270,11 +271,13 @@ class InfixEvaluation
         double left_operand;
         double right_operand;
 
+        // Handling the case when user types only a single number. i.e. 2
+        result = std::stod(postfix);
 
         for (int i = 0; i < postfix.length(); i++)
         {
             left = "", right = "";
-            if (isNum(postfix[i]))
+            if (isNum(postfix[i]) || postfix[i] == '.')
             {
                 // Right operand begins after a separator.
                 if (postfix[i - 1] == separator)
@@ -294,7 +297,7 @@ class InfixEvaluation
                 else
                 {
                     // Left operator precedes a separator. Scan until separator is found.
-                    while (postfix[i] != separator && !isOperator(postfix[i]))    
+                    while (postfix[i] != separator && !isOperator(postfix[i]) && postfix[i] != '\0')    
                         left += postfix[i++];
                     stack.push(std::stod(left));
                 }
@@ -332,12 +335,14 @@ class InfixEvaluation
         // Location where possible error might occur.
         int location = 0;
 
-        // Firstly checks whether the brackets used are balanced.
-        if (!isBracketCorrect(*expression)) return false;
+        // Firstly checks whether the brackets used are balanced or not.
+        if (!isBracketCorrect(expression[0])) return false;
 
-        for (int i = 0; i < expression -> length(); i++)
+        for (int i = 0; i < expression[0].length(); i++)
         {
+            // String size increases when we append '0's, so we subtract count to keep track of current location.
             location = (i + 1) - count;
+
             // If an unknown character is encountered.
             if (!allowedChar(expression[0][i]))
             {
@@ -346,13 +351,26 @@ class InfixEvaluation
                 return false;
             }
 
-            if (isOpenBracket(expression[0][i]) && isCloseBracket(expression[0][i+1])) 
+            // Case when expression contains empty brackets i.e. () without any value in between.
+            if (isOpenBracket(expression[0][i]) && isCloseBracket(expression[0][i + 1])) 
             {
                 cout << "Syntax Error. Error at character # " << location
                 << ". \nBrackets don't contain a value." << endl;
                 return false;
             }
-            
+
+            // Checks for correct use of decimal point. Valid decimal point appears before a number. i.e., .234 or 0.234
+            if (expression[0][i] == '.')
+            {
+                // If not valid decimal point.
+                if ( !isNum(expression[0][i + 1])  )
+                {
+                    cout << "Syntax Error. Error at character # " << location
+                        << ". \nIncorrect use of decimal point." << endl;
+                        return false;
+                }
+            }
+
             // Checks whether an operator conforms with infix notation (i.e. Left Root Right)
             if (isOperator(expression[0][i]))
             {
@@ -360,24 +378,23 @@ class InfixEvaluation
                 char right = expression[0][i + 1];
                 char left = expression[0][i - 1];
                 
+                // Allowing + and - to be used as unary operators.
                 if ((expression[0][i] == '+' || expression[0][i] == '-'))
                 {
                     // Insert 0 if there is no operand to the left of '+' or '-' operators.
-                    if ( !isNum(left) && !isCloseBracket(left) )
+                    // i.e. "-2" becomes "0 - 2" for postfix evaluation.
+                    if ( ( !isNum(left) && !isCloseBracket(left) && isNum(right)) )
                     {
-                        expression->insert(i, "0");
+                        expression -> insert(i, "0");
                         count++;
 
-                    }
-                    else if ( !((isCloseBracket(left) || isNum(left) ) && (isOpenBracket(right) || isNum(right))) )
-                    {
-                        cout << "Syntax Error. Error at character # " << location
-                        << ". \nIncorrect Infix Notation." << endl;
-                        return false;
+                        left = expression[0][i];
+                        right = expression[0][i + 2];
                     }
                 }
-                
-                else if ( !((isCloseBracket(left) || isNum(left) ) && (isOpenBracket(right) || isNum(right))) )
+
+                // Case when such expressions appear "23+" , "4*" , "+-" that do not conform with infix notation.
+                if ( !((isCloseBracket(left) || isNum(left) ) && (isOpenBracket(right) || isNum(right))) )
                 {
                     cout << "Syntax Error. Error at character # " << location
                     << ". \nIncorrect Infix Notation." << endl;
@@ -468,7 +485,7 @@ class InfixEvaluation
 
     bool isOperator(char ch)
     {
-        return (ch == '+' || ch == '-' || ch == '/' || ch == '*' || ch == '^');
+        return (ch == '+' || ch == '-' || ch == '/' || ch == '*' || ch == '^' || ch == '%');
     }
 
     bool isCloseBracket(char ch)
@@ -486,17 +503,17 @@ class InfixEvaluation
         return (isCloseBracket(ch) || isOpenBracket(ch));
     }
 
-    // Only numbers, brackets and operators are allowed in an algebraic expression.
+    // Only numbers, brackets, operators and decimal points are allowed in an algebraic expression.
     bool allowedChar(char ch)
     {
-        return (isNum(ch) || isOperator(ch) || isBracket(ch));
+        return (isNum(ch) || isOperator(ch) || isBracket(ch) || ch == '.');
     }
 
     // Returns precedence/priority of operators.
     int precedence(char _operator)
     {
         if (_operator == '+' || _operator == '-') return 1;
-        if (_operator == '*' || _operator == '/') return 2;
+        if (_operator == '*' || _operator == '/' || _operator == '%') return 2;
         if (_operator == '^') return 3;
         return 0;
     }
@@ -531,7 +548,7 @@ class InfixEvaluation
         double result;
 
         result = ((op == '+') ? (left + right) : (op == '-') ? (left - right) : (op == '*') ? (left * right) :
-        (op == '/') ? (left / right) : (op == '^') ? (pow(left, right)) : 0);
+        (op == '/') ? (left / right) : (op == '%') ? (fmod(left, right)) : (op == '^') ? (pow(left, right)) : 0);
 
         return result;
     }
@@ -553,7 +570,7 @@ int main(void)
     InfixEvaluation obj(expression);
 
     cout << "Postfix form: " << obj.showPostfixForm(expression) << endl;
-    cout << "Result: " << std::fixed << std::setprecision(3) <<obj.getResult() << endl;
+    cout << "Result: " << std::fixed << std::setprecision(3) << obj.getResult() << endl;
     
 }
 
@@ -565,3 +582,18 @@ string get_string(string prompt)
     getline(std::cin , str);
     return str;
 }
+
+
+/* Notes to self:
+
+Possible bottleneck in performance:
+
+    Currently isInfix method contains two loops that traverse the whole expression.
+    - One loop traverses the expression and looks for bracket imbalance.
+    - The other one traverses and looks for any unknown symbols, correct infix notation etc.
+
+    The two can be merged into a single loop that performs both of these tasks. However to maintain
+    readability, this is currently avoided. The time complexity is linear in either case as both loops
+    are independent.
+
+*/
