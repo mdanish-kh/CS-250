@@ -4,7 +4,7 @@ Data Structures and Algorithms Course by National University of Sciences and Tec
 
 ### Instructor
 
-Dr. Asad Waqar
+[Dr. Asad Waqar](https://www.linkedin.com/in/asadwaqarmalik/)
 
 ### Student Details
 
