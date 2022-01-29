@@ -24,18 +24,19 @@ struct Student
 class Vector
 {
     private:
-    // Initial size and growth factor for array.
+    // Initializing variables.
     int const INITIAL_SIZE = 2;
+    int const GROWTH_FACTOR = 2;
     int length = 0;
     int capacity = INITIAL_SIZE;
-    Student* array = new Student[capacity];
+    Student* array = new Student[INITIAL_SIZE];
 
     // Helper functions for Vector Class.
 
     // Helper Function for Insert. Grows array when needed.
     void GrowArray()
     {
-        capacity += INITIAL_SIZE;
+        capacity *= GROWTH_FACTOR;
 
         // Dynamically create a new array.
         Student* new_array = new Student[capacity];
@@ -74,13 +75,17 @@ class Vector
     // Helper function for delete. Shrinks array when needed.
     void ShrinkArray()
     {
-        capacity -= INITIAL_SIZE;
+        capacity /= GROWTH_FACTOR;
+        
         // Dynamically create a new array.
         Student* new_array = new Student[capacity];
+        
+        // Copy over all data from old array into the new array.
         for (int i = 0; i < length; i++)
         { 
             new_array[i] = array[i];
         }
+
         // Release the memory occupied by old array. delete[] used for deleting dynamic array of structs.
         delete[] array;
 
@@ -121,34 +126,53 @@ class Vector
             AppendToArray(id, name, CGPA, address);
             length++;
         }
+
         return 0;
     }
 
-    // Delete a student from the array. Array dynamically shrinks if needed.
+    /* Delete a student from the array. Array dynamically shrinks if needed.
+
+    Dynamically shrinking array when length reaches quarter (1/4) of capacity 
+    instead of half (1/2) to avoid worst case O(n^2) operations. Consider edge case 
+    in which insertion forces array growth and an immidiate delete operation after it 
+    forces shrink of dynamic array. If we continue these operations n times (i.e. consider 
+    the case dynamic array is used as a stack in which such scenario is plausible), we
+    reach O(n^2) worst case. So, an optimized resizing scheme is to grow twice the size
+    at full capacity and shrink array in half only when size(length) drops to 1/4 of its 
+    max size or capacity so we never encounter such a case. This also helps us achieve 
+    amortized O(1) time complexity instead of average O(1).
+
+    */
     int Delete(long long id)
     {
+        // Error codes.
         if (length == 0) return 1;
         if (id < 0) return 2;
 
         // Search returns location with respect to list not w.r.t array.
         int index = Search(id) - 1;
 
-        // Deleting from end of list and dynamically shrinking.
-        if ((capacity - length >= INITIAL_SIZE) && (index + 1 == length))
+        // Deleting from end of list
+        if (index + 1 == length)
         {
-            length--;
-            ShrinkArray();
+            // Condition for shrinking array.
+            if ((length <= capacity / 4))
+            {
+                length--;
+                ShrinkArray();
+            }
+
+            // Shrink not required
+            else length--;
         }
 
-        // Deleting from end of array.
-        else if (index + 1 == length) length--;
-
-        // Deletion from middle and dynamic shrinking.
+        // Deletion from middle and dynamic shrinking if required.
         else
         {
             FillRoom(index);
             length--;
-            if (capacity - length >= INITIAL_SIZE) ShrinkArray();          
+            if (length <= capacity / 4) 
+                ShrinkArray();          
         }
         return 0;
     }
@@ -196,8 +220,10 @@ class Vector
     // Replace data at a specific index.
     int ReplaceAtIndex(int location, int new_id, string name, float CGPA, string address)
     {
+        // Error codes.
         if (length == 0) return 1;
         if (location > length || location < 1) return 2;
+        
         // In case the new ID is already taken.
         if (Search(new_id) != -1) return 4;
         else
@@ -245,9 +271,10 @@ class Vector
 
     int getCapacity()
     {
+        // For showing it in a logical manner to user.
         if (capacity == length)
         {
-            return capacity + INITIAL_SIZE;
+            return capacity * GROWTH_FACTOR;
         }
         return capacity;
     }
@@ -279,7 +306,7 @@ int main(void)
     
     Vector list;
 
-    
+
     while (true)
     {
         // Getting user input.
